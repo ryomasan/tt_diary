@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React from 'react'
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -6,11 +7,7 @@ const SendEmailForResetPassword = () => {
 
   const navigate = useNavigate();
   const [user, setUser] = useState({
-    name: '',
     email: '',
-    password: '',
-    password_confirmation: '',
-    user_type: ''
   })
 
   const sendPasswordResetMail = async () => {
@@ -24,13 +21,10 @@ const SendEmailForResetPassword = () => {
         })
       .then((response) => {
         setUser({
-          name: '',
           email: '',
-          password: '',
-          user_type: ''
         })
-        navigate('/email-verification');
-        return alert("User Created: " + `${JSON.stringify(response.data, null, 4)}`);
+        // navigate('/email-verification');
+        return alert("パスワード再設定メールの送信完了: " + `${JSON.stringify(response.data, null, 4)}`);
       })
       .catch((err) => {
         return alert(err);
