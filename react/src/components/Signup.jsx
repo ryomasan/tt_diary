@@ -9,7 +9,7 @@ const Signup = () => {
     name: '',
     email: '',
     password: '',
-    password_confirmation: '',
+    // password_confirmation: '',
     user_type: ''
   })
   const createUser = async () => {
@@ -28,7 +28,7 @@ const Signup = () => {
           password: '',
           user_type: ''
         })
-        navigate('/email-verification');
+        navigate('/login');
         return alert("User Created: " + `${JSON.stringify(response.data, null, 4)}`);
       })
       .catch((err) => {

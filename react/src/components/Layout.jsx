@@ -6,19 +6,25 @@ const Layout = () => {
       <nav>
         <ul>
           <li>
-            <Link to="/">Home</Link>
+            <Link to="/">投稿一覧</Link>
           </li>
           <li>
-            <Link to="/post">Post User</Link>
+            <Link to="/post">新規登録</Link>
           </li>
           <li>
-            <Link to="/get">Get All User</Link>
+            <Link to="/get">登録済みユーザー</Link>
           </li>
           <li>
-            <Link to="/login">Login User</Link>
+            <Link to="/login">ログイン</Link>
           </li>
           <li>
-            <Link to="/logout">Logout User</Link>
+            <Link to="/reset-password">パスワード再設定</Link>
+          </li>
+          <li>
+            <Link to="/password-reset-mail">パスワードをお忘れですか？</Link>
+          </li>
+          <li>
+            <Link to="/logout">ログアウト</Link>
           </li>
         </ul>
       </nav>
