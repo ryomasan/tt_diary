@@ -7,6 +7,33 @@ import nodemailer from 'nodemailer';
 // Assigning users to the variable User
 const User = db.users;
 const Blacklist = db.blacklistedTokens;
+// Helper function to send emails
+const sendEmail = async (to, subject, htmlContent) => {
+    const transporter = nodemailer.createTransport({
+        host: "maildev",
+        port: 1025,
+        tls: {
+            rejectUnauthorized: false,
+        },
+    });
+
+    const mailOptions = {
+        from: 'ryo1030ma2@gmail.com',
+        to,
+        subject,
+        html: htmlContent,
+    };
+
+    return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (error) => {
+            if (error) {
+                console.error('Error sending email:', error);
+                return reject('Error sending email');
+            }
+            resolve('Email sent successfully');
+        });
+    });
+};
 
 //signing a user up
 export const getAllUsers = async (req, res) => {
@@ -29,7 +56,7 @@ export const signup = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({
                 status: "failed",
-                message: "It seems you already have an account, please log in instead.",
+                message: "このメールアドレスは既に使用されています",
             });
         }
 
@@ -45,48 +72,23 @@ export const signup = async (req, res) => {
                 secure: false,   // Use true if you are testing on HTTPS
             });
 
-            const transporter = nodemailer.createTransport({
-                host: "maildev",
-                port: 1025,
-                // auth: {
-                //     user: process.env.GMAIL_ADDRESS,
-                //     pass: process.env.GMAIL_PASSWORD,
-                // },
-                tls: {
-                    rejectUnauthorized: false, // Optional: Allow self-signed certificates for testing
-                }
-            });
-
-            // const authUrl = `http://${req.headers.host}/auth/authentication-code/${user.id}/${token}`;
             const redirectUrl = 'http://localhost:5173/login';
-            const mailOptions = {
-                from: 'ryo1030ma2@gmail.com',
-                to: email,
-                subject: 'ユーザー登録完了',
-                html: `
-                    <p>以下のURLをクリックして、ユーザー登録を完了してください</p>
-                    <a href="${redirectUrl}">${redirectUrl}</a>
-                `,
-            };
+            const emailContent = `
+                  <p>以下のURLをクリックして、ユーザー登録を完了してください</p>
+                  <a href="${redirectUrl}">${redirectUrl}</a>
+                 `;
 
-            transporter.sendMail(mailOptions, (error) => {
-                if (error) {
-                    console.error('Error sending email:', error);
-                    return res.status(500).json({ message: 'Error sending email' });
-                }
-                res.status(200).json({ message: 'Registration successful', token, redirectUrl });
+            await sendEmail(email, 'ユーザー登録完了', emailContent)
+            res.status(200).json({
+                status: "success",
+                message: "ご登録のメールアドレスに確認メールを送信しました。",
             });
-            // res.status(200).json({
-            //     status: "success",
-            //     message: "Send Email to registered address",
-            // });
         }
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });
     }
 };
-
 
 //login authentication
 export const login = async (req, res) => {
@@ -119,14 +121,14 @@ export const login = async (req, res) => {
                 //send user data
                 res.status(200).json({
                     status: "success",
-                    message: "You have successfully logged in.",
+                    message: "ログイン成功.",
                 });
             } else {
                 return res.status(401).json({
                     status: "failed",
                     data: [],
                     message:
-                        "Invalid email or password. Please try again with the correct credentials.",
+                        "メールアドレスまたはパスワードが適切でありません",
                 });
             }
         } else {
@@ -134,7 +136,7 @@ export const login = async (req, res) => {
                 status: "failed",
                 data: [],
                 message:
-                    "Invalid email or password. Please try again with the correct credentials.",
+                    "メールアドレスまたはパスワードが適切でありません",
             });
         }
     }
@@ -143,11 +145,9 @@ export const login = async (req, res) => {
     }
 }
 
-
 export const sendPasswordResetMail = async (req, res) => {
     try {
         const { email } = req.body;
-
         //find a user by their email
         const user = await User.findOne({
             where: {
@@ -155,52 +155,25 @@ export const sendPasswordResetMail = async (req, res) => {
             }
         });
 
-        //if user email is found, compare password with bcrypt
+        
         if (user) {
-            const transporter = nodemailer.createTransport({
-                host: "maildev",
-                port: 1025,
-                // auth: {
-                //     user: process.env.GMAIL_ADDRESS,
-                //     pass: process.env.GMAIL_PASSWORD,
-                // },
-                tls: {
-                    rejectUnauthorized: false, // Optional: Allow self-signed certificates for testing
-                }
-            });
-
-            // const authUrl = `http://${req.headers.host}/auth/authentication-code/${user.id}/${token}`;
             const redirectUrl = 'http://localhost:5173/reset-password';
-
-            const mailOptions = {
-                from: 'ryo1030ma2@gmail.com',
-                to: email,
-                subject: 'ユーザー登録完了',
-                html: `
+            const emailContent = `
                     <div>ご登録のメールアドレスにパスワード再設定用URLを送信しました。</div>
                     <div>メール内のリンクをクリックして、パスワード再設定を行なってください。</div>
                     <a href="${redirectUrl}">${redirectUrl}</a>
-                `,
-            };
-
-            transporter.sendMail(mailOptions, (error) => {
-                if (error) {
-                    console.error('Error sending email:', error);
-                    return res.status(500).json({ message: 'Error sending email' });
-                }
-                res.status(200).json({ message: 'Send mail for reseting password', redirectUrl });
-            });
-
+                    `
+            await sendEmail(email, 'パスワード再設定用URLを送信しました', emailContent)
             res.status(200).json({
                 status: "success",
-                message: "You have successfully logged in.",
+                message: "パスワード再設定用URLを送信しました",
             });
         } else {
             return res.status(401).json({
                 status: "failed",
                 data: [],
                 message:
-                    "Invalid email or password. Please try again with the correct credentials.",
+                    "メールアドレスまたはパスワードが適切でありません",
             });
         }
     }
@@ -208,6 +181,25 @@ export const sendPasswordResetMail = async (req, res) => {
         console.log(error);
     }
 }
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await User.update({ password: hashedPassword });
+        if (user) {
+            res.status(200).json({
+                status: "success",
+                message: "パスワードが変更されました",
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 
 export const logout = async (req, res) => {
     try {
